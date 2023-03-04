@@ -71,9 +71,9 @@ def getCCacheExecutable = {
             // Get the path to the ccache executable
             return Paths.get(pathName).toFile()
         }
-        return "macOs"
+        pathName = "macOs"
     } else {
-        return "linux"
+        pathName = "linux"
     }
     def executableFile = "ccache${if (isWindows) ".exe" else ""}"
     // Build the path to the local ccache executable
