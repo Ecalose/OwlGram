@@ -8,10 +8,12 @@ import com.google.android.play.core.appupdate.AppUpdateInfo;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.telegram.tgnet.AbstractSerializedData;
 
 import java.io.IOException;
 import java.io.PushbackInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -28,6 +30,7 @@ public class OWLENC {
                     add(items.getString(i));
                 }
             } catch (JSONException ignored){}
+            fixItems();
         }
 
         @Override
@@ -43,6 +46,35 @@ public class OWLENC {
                 if (!foundValid) return false;
             }
             return true;
+        }
+
+        @Override
+        public void readParams(AbstractSerializedData stream, int constructor, boolean exception) {
+            super.readParams(stream, constructor, exception);
+            fixItems();
+        }
+
+        private void fixItems() {
+            // Add missing items
+            if (!contains("settings")) {
+                add("settings");
+            }
+
+            // Clear duplicates
+            ArrayList<String> items = new ArrayList<>();
+            for (String item : this) {
+                if (!items.contains(item) || item.equals(MenuOrderController.DIVIDER_ITEM)) {
+                    items.add(item);
+                }
+            }
+            clear();
+            addAll(items);
+        }
+
+        @Override
+        protected void serializeToStream(AbstractSerializedData stream) {
+            fixItems();
+            super.serializeToStream(stream);
         }
 
         @Override
@@ -272,10 +304,14 @@ public class OWLENC {
         }
 
         public void migrate() {
-            if (settings.containsKey("drawerItems") && settings.get("drawerItems") instanceof String) {
-                DrawerItems drawerItems = new DrawerItems();
-                drawerItems.migrate((String) settings.get("drawerItems"));
-                settings.put("drawerItems", drawerItems);
+            if (settings.containsKey("drawerItems")) {
+                if (settings.get("drawerItems") instanceof String) {
+                    DrawerItems drawerItems = new DrawerItems();
+                    drawerItems.migrate((String) settings.get("drawerItems"));
+                    settings.put("drawerItems", OptionalMagic.of(drawerItems));
+                } else if (settings.get("drawerItems") instanceof DrawerItems) {
+                    settings.put("drawerItems", OptionalMagic.of((DrawerItems) settings.get("drawerItems")));
+                }
             }
 
             if (settings.containsKey("confirmStickersGIFs") || settings.containsKey("sendConfirm")) {

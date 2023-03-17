@@ -25,6 +25,7 @@ public abstract class MagicBaseObject {
     protected final int DOUBLE_CONSTRUCTOR = 0x2210c154;
     protected final int BOOL_CONSTRUCTOR = 0x997275b6;
     protected final int BYTES_CONSTRUCTOR = 0x1cb5c416;
+    protected final int OPTIONAL_CONSTRUCTOR = 0x1cb7c421;
 
     private final int MAX_VECTOR_SIZE = 1000;
 
@@ -122,6 +123,10 @@ public abstract class MagicBaseObject {
         return result;
     }
 
+    protected Object readObject(AbstractSerializedData stream, boolean exception) throws SkipException {
+        return readObject(stream, stream.readInt32(exception), exception);
+    }
+
     private Object readObject(AbstractSerializedData stream, int constructor, boolean exception) throws SkipException {
         switch (constructor) {
             case VECTOR_CONSTRUCTOR:
@@ -142,6 +147,10 @@ public abstract class MagicBaseObject {
                 return stream.readBool(exception);
             case BYTES_CONSTRUCTOR:
                 return stream.readByteArray(exception);
+            case OPTIONAL_CONSTRUCTOR:
+                OptionalMagic<?> obj = new OptionalMagic<>();
+                obj.readParams(stream, constructor, exception);
+                return obj;
         }
         return readCustomObject(stream, constructor, exception);
     }
@@ -185,7 +194,7 @@ public abstract class MagicBaseObject {
         return fields;
     }
 
-    private void serializeToStream(AbstractSerializedData stream) {
+    protected void serializeToStream(AbstractSerializedData stream) {
         stream.writeInt32(getConstructor());
         ArrayList<Field> fields = getFields(getClass());
         stream.writeInt32(fields.size());
@@ -221,7 +230,7 @@ public abstract class MagicBaseObject {
         }
     }
 
-    private void serializeObject(Object object, AbstractSerializedData stream) {
+    protected void serializeObject(Object object, AbstractSerializedData stream) {
         if (object instanceof Field) {
             try {
                 Field field = (Field) object;
@@ -258,22 +267,12 @@ public abstract class MagicBaseObject {
         } else if (object instanceof HashMap) {
             stream.writeInt32(HASH_MAP_VECTOR_CONSTRUCTOR);
             serializeHashMap((HashMap<?, ?>) object, stream);
-        } else if (object instanceof MagicBaseObject /*&& isCustomObject(object)*/) {
+        } else if (object instanceof MagicBaseObject) {
             MagicBaseObject magicObject = (MagicBaseObject) object;
             magicObject.serializeToStream(stream);
         } else if (object != null) {
             throw new RuntimeException("can't serialize object " + object);
         }
-    }
-
-    private static boolean isCustomObject(Object obj) {
-        Class<?>[] classes = OWLENC.class.getClasses();
-        for (Class<?> clazz : classes) {
-            if (clazz.isInstance(obj)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

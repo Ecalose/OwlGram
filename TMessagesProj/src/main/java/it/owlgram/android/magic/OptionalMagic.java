@@ -1,42 +1,45 @@
 package it.owlgram.android.magic;
 
 
+import org.telegram.tgnet.AbstractSerializedData;
+
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-public class OptionalMagic<T> {
-    private static final OptionalMagic<?> EMPTY = new OptionalMagic<>();
+public class OptionalMagic<T> extends MagicBaseObject {
     private T value;
 
-    private OptionalMagic() {
-        this.value = null;
+    public static <T> OptionalMagic<T> of(T value) {
+        OptionalMagic<T> optional = new OptionalMagic<>();
+        optional.value = value;
+        return optional;
     }
 
-    public static<T> OptionalMagic<T> empty() {
-        @SuppressWarnings("unchecked")
-        OptionalMagic<T> t = (OptionalMagic<T>) EMPTY;
-        return t;
+    public static <T> OptionalMagic<T> of(byte[] stream, boolean exception) {
+        OptionalMagic<T> optional = new OptionalMagic<>();
+        optional.readParams(stream, exception);
+        return optional;
     }
 
-    private OptionalMagic(T value) {
-        this.value = Objects.requireNonNull(value);
-    }
-
-    public static <T> OptionalMagic<T> readParams(byte[] stream, T object) {
-        if (object instanceof MagicBaseObject) {
+    @Override
+    @SuppressWarnings("unchecked")
+    public void readParams(AbstractSerializedData stream, int constructor, boolean exception) {
+        if (stream.readBool(exception)) {
             try {
-                ((MagicBaseObject) object).readParams(stream, true);
-                return new OptionalMagic<>(object);
-            } catch (RuntimeException ignored) {}
+                value = (T) readObject(stream, exception);
+            } catch (SkipException ignored) {}
+        } else {
+            value = null;
         }
-        return empty();
     }
 
-    public byte[] serializeToStream() {
-        if (isPresent() && value instanceof MagicBaseObject) {
-            return ((MagicBaseObject) value).serializeToStream();
+    @Override
+    protected void serializeToStream(AbstractSerializedData stream) {
+        stream.writeInt32(getConstructor());
+        stream.writeBool(isPresent());
+        if (isPresent()) {
+            serializeObject(value, stream);
         }
-        return null;
     }
 
     public T get() {
@@ -72,4 +75,8 @@ public class OptionalMagic<T> {
         return Objects.equals(value, other.value);
     }
 
+    @Override
+    public int getConstructor() {
+        return OPTIONAL_CONSTRUCTOR;
+    }
 }

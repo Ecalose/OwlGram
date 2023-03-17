@@ -67,7 +67,6 @@ public class EmojiPackSettings extends BaseSettingsActivity implements Notificat
     private int customEmojiAddRow;
     private int emojiPackHeaderRow;
     private int placeHolderRow;
-    private int customEmojiPlaceHolderRow;
     private int emojiPacksStartRow;
     private int emojiPacksEndRow;
     private int emojiHintRow;
@@ -264,6 +263,11 @@ public class EmojiPackSettings extends BaseSettingsActivity implements Notificat
     protected void updateRowsId() {
         super.updateRowsId();
         updatePacks();
+        emojiPacksStartRow = -1;
+        emojiPacksEndRow = -1;
+        customEmojiStartRow = -1;
+        customEmojiEndRow = -1;
+        placeHolderRow = -1;
 
         generalHeaderRow =  rowCount++;
         useSystemEmojiRow = rowCount++;
@@ -273,11 +277,6 @@ public class EmojiPackSettings extends BaseSettingsActivity implements Notificat
             customEmojiStartRow = rowCount;
             rowCount += customEmojiPacks.size();
             customEmojiEndRow = rowCount;
-            customEmojiPlaceHolderRow = -1;
-        } else {
-            customEmojiStartRow = -1;
-            customEmojiEndRow = -1;
-            customEmojiPlaceHolderRow = rowCount++;
         }
         customEmojiAddRow = rowCount++;
         customEmojiHintRow = rowCount++;
@@ -287,10 +286,7 @@ public class EmojiPackSettings extends BaseSettingsActivity implements Notificat
             emojiPacksStartRow = rowCount;
             rowCount += emojiPacks.size();
             emojiPacksEndRow = rowCount;
-            placeHolderRow = -1;
         } else {
-            emojiPacksStartRow = -1;
-            emojiPacksEndRow = -1;
             placeHolderRow = rowCount++;
         }
         emojiHintRow = rowCount++;
@@ -416,7 +412,7 @@ public class EmojiPackSettings extends BaseSettingsActivity implements Notificat
                 return ViewType.SHADOW;
             } else if (position == customEmojiAddRow) {
                 return ViewType.CREATION_TEXT_CELL;
-            } else if (position == placeHolderRow || position == customEmojiPlaceHolderRow) {
+            } else if (position == placeHolderRow) {
                 return ViewType.PLACEHOLDER;
             }
             throw new IllegalArgumentException("Invalid position");
@@ -745,11 +741,10 @@ public class EmojiPackSettings extends BaseSettingsActivity implements Notificat
             put(++pointer, useSystemEmojiRow, sparseIntArray);
             put(++pointer, emojiDividerRow, sparseIntArray);
             put(++pointer, useCustomEmojiHeaderRow, sparseIntArray);
-            put(++pointer, customEmojiPlaceHolderRow, sparseIntArray);
+            put(++pointer, placeHolderRow, sparseIntArray);
             put(++pointer, customEmojiAddRow, sparseIntArray);
             put(++pointer, customEmojiHintRow, sparseIntArray);
             put(++pointer, emojiPackHeaderRow, sparseIntArray);
-            put(++pointer, placeHolderRow, sparseIntArray);
             put(++pointer, emojiHintRow, sparseIntArray);
         }
 
